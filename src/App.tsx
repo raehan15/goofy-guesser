@@ -246,7 +246,7 @@ function GameContent() {
 
   if (authLoading) {
     return (
-      <div className="App" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <div className="App" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh' }}>
         <p>Loading...</p>
       </div>
     );
@@ -265,7 +265,7 @@ function GameContent() {
       : (hasPlayedToday || resultSubmitted ? true : false);
     
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%)' }}>
+      <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%)' }}>
         <Navbar />
         <GroupsPanel 
           onPlayGame={() => setView('game')} 

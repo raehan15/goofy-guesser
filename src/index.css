@@ -13,6 +13,10 @@
   --animation-speed: 350ms;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -36,7 +40,8 @@ body {
 /* Game wrapper - full width container with Navbar */
 .game-wrapper {
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height */
+  overflow: hidden; /* Prevent scrolling */
   display: flex;
   flex-direction: column;
   background: linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%);
@@ -216,4 +221,35 @@ button {
 @keyframes scaleIn {
   from { transform: scale(0.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile Optimizations */
+@media (max-height: 700px) {
+  .App {
+    padding-bottom: 5px;
+  }
+  
+  .keyboard-key {
+    height: 48px;
+    font-size: 13px;
+    margin: 0 2px;
+  }
+  
+  /* Scale down grid rows slightly if needed */
+  .row {
+    margin-bottom: 4px;
+  }
+  
+  .tile {
+    width: 52px;
+    height: 52px;
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .keyboard-key {
+    padding: 0;
+    font-size: 12px;
+  }
 }
