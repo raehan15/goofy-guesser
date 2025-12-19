@@ -1,0 +1,219 @@
+:root {
+  --color-bg: #121213;
+  --color-text: #ffffff;
+  --color-correct: #00b8a3; /* Vibrant Teal */
+  --color-present: #ffc425; /* Vibrant Gold */
+  --color-absent: #3a3a3c;
+  --color-tile-border: #565758;
+  --color-tile-active: #818384;
+  --color-key-bg: #818384;
+  --color-key-text: #ffffff;
+  --font-family: 'Inter', sans-serif;
+
+  --animation-speed: 350ms;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Game wrapper - full width container with Navbar */
+.game-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%);
+}
+
+/* Game view container - keep centered and narrow for game grid */
+.App {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.keyboard-key {
+  color: var(--color-key-text);
+  border-radius: 6px;
+  margin: 0 3px;
+  height: 58px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+}
+
+.keyboard-key:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.keyboard-key:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flip {
+  0% {
+    transform: scaleY(1);
+    background-color: transparent;
+    border-color: var(--color-tile-border);
+  }
+  50% {
+    transform: scaleY(0);
+    background-color: var(--final-color);
+    border-color: var(--final-color);
+  }
+  100% {
+    transform: scaleY(1);
+    background-color: var(--final-color);
+    border-color: var(--final-color);
+  }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: linear-gradient(145deg, #1e1e1f, #121213);
+  border: 1px solid var(--color-tile-border);
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 350px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: var(--color-text);
+}
+
+.modal-title {
+  font-size: 2rem;
+  margin: 0 0 10px 0;
+  background: linear-gradient(to right, #e5e5e5, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modal-stat {
+  font-size: 1.1rem;
+  margin: 10px 0 25px 0;
+  color: #a0a0a1;
+}
+
+.modal-solution {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-text);
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  display: inline-block;
+  letter-spacing: 2px;
+}
+
+.btn-primary, .btn-secondary {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  transition: transform 0.1s, filter 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #e5e5e5, #ffffff);
+  color: #0a0f0f;
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary {
+  background-color: var(--color-present);
+  color: #121213;
+  box-shadow: 0 4px 15px rgba(255, 196, 37, 0.3);
+}
+
+.btn-primary:hover, .btn-secondary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active, .btn-secondary:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

@@ -1,0 +1,238 @@
+/* Entry Screen - Premium teal gradient design */
+.entry-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle animated background pattern with teal glow */
+.entry-screen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(ellipse at 30% 20%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(20, 184, 166, 0.05) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, rgba(13, 148, 136, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.entry-content {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.entry-logo {
+  margin-bottom: 48px;
+}
+
+.entry-logo h1 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  margin: 0;
+  background: linear-gradient(135deg, #d4d4d4 0%, #ffffff 50%, #e5e5e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.entry-logo p {
+  color: #737373;
+  font-size: 0.95rem;
+  margin-top: 12px;
+  letter-spacing: 1px;
+}
+
+.entry-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.entry-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  letter-spacing: 0.5px;
+}
+
+.entry-btn-primary {
+  background: linear-gradient(135deg, #e5e5e5 0%, #ffffff 100%);
+  color: #0a0f0f;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+}
+
+.entry-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.25);
+}
+
+.entry-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e5e5e5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.entry-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.entry-btn-ghost {
+  background: transparent;
+  color: #737373;
+  padding: 12px 24px;
+}
+
+.entry-btn-ghost:hover {
+  color: #ffffff;
+}
+
+.entry-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 28px 0;
+  color: #525252;
+  font-size: 0.85rem;
+}
+
+.entry-divider::before,
+.entry-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+/* Auth Forms */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.auth-form-header {
+  margin-bottom: 24px;
+}
+
+.auth-form-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fafafa;
+  margin: 0 0 8px 0;
+}
+
+.auth-form-header p {
+  color: #737373;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.auth-input-group {
+  text-align: left;
+}
+
+.auth-input-group label {
+  display: block;
+  color: #a3a3a3;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #fafafa;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.auth-input::placeholder {
+  color: #525252;
+}
+
+.auth-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.auth-submit {
+  margin-top: 8px;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  color: #737373;
+  font-size: 0.9rem;
+}
+
+.auth-footer button {
+  background: none;
+  border: none;
+  color: #e5e5e5;
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.auth-footer button:hover {
+  color: #ffffff;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #737373;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #ffffff;
+}
