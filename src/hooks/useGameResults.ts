@@ -24,10 +24,13 @@ export function useGameResults() {
     return Math.floor(diffMs / (24 * 60 * 60 * 1000));
   };
 
-  // Get current local date in YYYY-MM-DD format
+  // Get current local date in YYYY-MM-DD format (ACTUAL local, not UTC!)
   const getLocalDate = (): string => {
     const now = new Date();
-    return now.toISOString().split('T')[0];
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Get timezone offset in minutes
@@ -35,20 +38,23 @@ export function useGameResults() {
     return new Date().getTimezoneOffset();
   };
 
-  // Get current UTC date in YYYY-MM-DD format
-  // This is the date used for scoring (UTC-based, not local)
-  const getUtcDate = (): string => {
-    const now = new Date();
-    return now.toISOString().split('T')[0];
-  };
-
   // Submit result to all groups the user is in
   const submitResult = useCallback(async (
     groups: GroupWithMembership[],
     params: SubmitResultParams
   ): Promise<{ success: boolean; submitted: number; errors: string[] }> => {
-    if (!supabase || !user || groups.length === 0) {
-      return { success: false, submitted: 0, errors: ['Not authenticated or no groups'] };
+    if (!supabase || !user) {
+      return { success: false, submitted: 0, errors: ['Not authenticated'] };
+    }
+    
+    // If user has no groups, submit a personal play
+    if (groups.length === 0) {
+      const result = await submitPersonalResult(params);
+      return { 
+        success: result.success, 
+        submitted: result.success ? 1 : 0, 
+        errors: result.error ? [result.error] : [] 
+      };
     }
 
     const { guessCount, solved } = params;
@@ -67,27 +73,31 @@ export function useGameResults() {
         .eq('user_id', user.id)
         .eq('group_id', group.id)
         .eq('day_index', dayIndex)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         // Already submitted for this day
         continue;
       }
 
+      const insertData = {
+        user_id: user.id,
+        group_id: group.id,
+        day_index: dayIndex,
+        guess_count: guessCount,
+        solved,
+        local_date: localDate,
+        timezone_offset: timezoneOffset
+      };
+      
+      console.log('Inserting to daily_results:', insertData);
+
       const { error } = await supabase
         .from('daily_results')
-        .insert({
-          user_id: user.id,
-          group_id: group.id,
-          day_index: dayIndex,
-          guess_count: guessCount,
-          solved,
-          local_date: localDate,
-          timezone_offset: timezoneOffset,
-          utc_date: getUtcDate()
-        });
+        .insert(insertData);
 
       if (error) {
+        console.error('Supabase INSERT error:', error);
         errors.push(`Failed for ${group.name}: ${error.message}`);
       } else {
         submitted++;
@@ -113,14 +123,81 @@ export function useGameResults() {
       .eq('user_id', user.id)
       .eq('group_id', group.id)
       .eq('local_date', localDate)
-      .single();
+      .maybeSingle();
+
+    return !!data;
+  }, [user]);
+
+  // Submit a personal result (for users with no groups)
+  const submitPersonalResult = useCallback(async (
+    params: SubmitResultParams
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!supabase || !user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const localDate = getLocalDate();
+    const timezoneOffset = getTimezoneOffset();
+
+    // Check if already submitted personal play today
+    const { data: existing } = await supabase
+      .from('daily_results')
+      .select('id')
+      .eq('user_id', user.id)
+      .is('group_id', null)
+      .eq('local_date', localDate)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: true }; // Already submitted
+    }
+
+    const insertData = {
+      user_id: user.id,
+      group_id: null, // Personal play - no group
+      day_index: 0, // Not applicable for personal plays
+      guess_count: params.guessCount,
+      solved: params.solved,
+      local_date: localDate,
+      timezone_offset: timezoneOffset
+    };
+
+    console.log('Inserting personal play:', insertData);
+
+    const { error } = await supabase
+      .from('daily_results')
+      .insert(insertData);
+
+    if (error) {
+      console.error('Personal play INSERT error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  }, [user]);
+
+  // Check if user has played today (personal play, no groups)
+  const hasPlayedTodayPersonal = useCallback(async (): Promise<boolean> => {
+    if (!supabase || !user) return false;
+
+    const localDate = getLocalDate();
+
+    const { data } = await supabase
+      .from('daily_results')
+      .select('id')
+      .eq('user_id', user.id)
+      .is('group_id', null)
+      .eq('local_date', localDate)
+      .maybeSingle();
 
     return !!data;
   }, [user]);
 
   return {
     submitResult,
+    submitPersonalResult,
     hasSubmittedToday,
+    hasPlayedTodayPersonal,
     calculateDayIndex,
     getLocalDate,
     getTimezoneOffset

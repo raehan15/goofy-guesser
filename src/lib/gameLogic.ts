@@ -62,3 +62,42 @@ export const checkGuess = (guess: string, solution: string): LetterState[] => {
 
   return result;
 };
+
+// ============================================
+// GUEST LOCAL STORAGE HELPERS
+// ============================================
+// For non-logged-in users (guests) only
+
+const GUEST_STORAGE_KEY = 'goofy_guesser_guest_play';
+
+interface GuestPlayStatus {
+  date: string;
+  played: boolean;
+  guessCount?: number;
+  solved?: boolean;
+}
+
+export const saveGuestPlayStatus = (status: Omit<GuestPlayStatus, 'date' | 'played'>): void => {
+  try {
+    const data: GuestPlayStatus = {
+      date: getLocalDateString(),
+      played: true,
+      ...status
+    };
+    localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save guest play status:', e);
+  }
+};
+
+export const hasGuestPlayedToday = (): boolean => {
+  try {
+    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
+    if (!stored) return false;
+    
+    const data: GuestPlayStatus = JSON.parse(stored);
+    return data.date === getLocalDateString() && data.played === true;
+  } catch {
+    return false;
+  }
+};

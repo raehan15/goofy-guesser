@@ -49,9 +49,6 @@ export function Modal({
     alert('Grid copied to clipboard!');
   };
 
-  // Authenticated users with groups - show "Back to Groups" instead of "Play Again"
-  const showBackToGroups = isAuthenticated && groupCount > 0;
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -78,16 +75,15 @@ export function Modal({
           </p>
         )}
 
-        {showBackToGroups && (
-          <p style={{
-            fontSize: '0.8rem',
-            color: '#9ca3af',
-            marginBottom: '16px',
-            textAlign: 'center'
-          }}>
-            Come back tomorrow for a new word!
-          </p>
-        )}
+        {/* Always show "come back tomorrow" message */}
+        <p style={{
+          fontSize: '0.8rem',
+          color: '#9ca3af',
+          marginBottom: '16px',
+          textAlign: 'center'
+        }}>
+          Come back tomorrow for a new word!
+        </p>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
           <button className="btn-secondary" onClick={copyScore}>
@@ -98,13 +94,13 @@ export function Modal({
           </button>
         </div>
 
-        {showBackToGroups ? (
+        {isAuthenticated ? (
           <button className="btn-primary" onClick={onBackToGroups}>
             ← Back to Groups
           </button>
         ) : (
           <button className="btn-primary" onClick={onClose}>
-            Play Again
+            ← Back to Home
           </button>
         )}
       </div>

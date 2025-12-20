@@ -9,14 +9,21 @@ import { Navbar } from './components/Navbar';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useGroups } from './hooks/useGroups';
 import { useGameResults } from './hooks/useGameResults';
-import { isValidGuess, checkGuess, getWordOfDay, type LetterState } from './lib/gameLogic';
+import { 
+  isValidGuess, 
+  checkGuess, 
+  getWordOfDay, 
+  saveGuestPlayStatus,
+  hasGuestPlayedToday,
+  type LetterState 
+} from './lib/gameLogic';
 
 type AppView = 'entry' | 'groups' | 'game';
 
 function GameContent() {
   const { user, loading: authLoading } = useAuth();
   const { groups, loading: groupsLoading } = useGroups();
-  const { submitResult, hasSubmittedToday } = useGameResults();
+  const { submitResult, hasSubmittedToday, hasPlayedTodayPersonal } = useGameResults();
 
   const [view, setView] = useState<AppView>('entry');
   const [isGuest, setIsGuest] = useState(false);
@@ -72,7 +79,17 @@ function GameContent() {
         return;
       }
 
-      // User has no groups - they haven't played in any group
+      // ALWAYS check for personal play first (covers case where user played, then joined group)
+      const playedPersonal = await hasPlayedTodayPersonal();
+      if (playedPersonal) {
+        if (!cancelled) {
+          setHasPlayedToday(true);
+          setIsCheckingPlayStatus(false);
+        }
+        return;
+      }
+
+      // If user has no groups, we already checked personal play above
       if (groups.length === 0) {
         if (!cancelled) {
           setHasPlayedToday(false);
@@ -100,7 +117,7 @@ function GameContent() {
     checkPlayedStatus();
 
     return () => { cancelled = true; };
-  }, [user, authLoading, groups, groupsLoading, hasSubmittedToday]);
+  }, [user, authLoading, groups, groupsLoading, hasSubmittedToday, hasPlayedTodayPersonal]);
 
   // Determine view based on auth state
   useEffect(() => {
@@ -204,9 +221,22 @@ function GameContent() {
     }
   };
 
-  // Submit result when game ends (for logged in users with groups)
+  // Submit result when game ends (for all logged in users)
   const handleGameEnd = useCallback(async () => {
-    if (resultSubmitted || isGuest || !user || groups.length === 0) return;
+    // For guests - save to LocalStorage
+    if (isGuest) {
+      saveGuestPlayStatus({
+        guessCount: finalGuessCountRef.current,
+        solved: isGameWon
+      });
+      setResultSubmitted(true);
+      return;
+    }
+    
+    // For authenticated users - save to database
+    if (resultSubmitted || !user) return;
+    
+    console.log('handleGameEnd called:', { groupsCount: groups.length, isGameWon });
     
     const result = await submitResult(groups, {
       guessCount: finalGuessCountRef.current,
@@ -217,9 +247,12 @@ function GameContent() {
     setHasPlayedToday(true);
     
     if (result.submitted > 0) {
-      console.log(`Submitted results to ${result.submitted} groups`);
+      console.log(`Submitted results to ${result.submitted} group(s)`);
     }
-  }, [resultSubmitted, isGuest, user, groups, turn, isGameWon, submitResult]);
+    if (result.errors.length > 0) {
+      console.error('Submit errors:', result.errors);
+    }
+  }, [resultSubmitted, isGuest, user, groups, isGameWon, submitResult]);
 
   useEffect(() => {
     if (isGameOver) {
@@ -227,19 +260,12 @@ function GameContent() {
     }
   }, [isGameOver, handleGameEnd]);
 
-  const resetGame = () => {
-    setIsGameOver(false);
-    setIsGameWon(false);
-    setTurn(0);
-    setGuesses(Array(6).fill(''));
-    setGuessStates(Array(6).fill(Array(5).fill('initial')));
-    setUsedKeys({});
-    setSolution(getWordOfDay());
-    setCurrentGuess('');
-    setResultSubmitted(false);
-  };
-
   const handlePlayAsGuest = () => {
+    // Check if guest already played today
+    if (hasGuestPlayedToday()) {
+      alert('You\'ve already played today! Come back tomorrow for a new word.');
+      return;
+    }
     setIsGuest(true);
     setView('game');
   };
@@ -316,7 +342,10 @@ function GameContent() {
           solution={solution} 
           turn={turn}
           guessStates={guessStates}
-          onClose={resetGame}
+          onClose={() => {
+            setIsGuest(false);
+            setView('entry');
+          }}
           onBackToGroups={() => setView('groups')}
           groupCount={!isGuest && user ? groups.length : 0}
           isAuthenticated={!isGuest && !!user}
