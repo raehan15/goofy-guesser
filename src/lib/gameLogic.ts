@@ -64,40 +64,83 @@ export const checkGuess = (guess: string, solution: string): LetterState[] => {
 };
 
 // ============================================
-// GUEST LOCAL STORAGE HELPERS
+// GAME PROGRESS PERSISTENCE (LocalStorage)
 // ============================================
-// For non-logged-in users (guests) only
+// Saves in-progress and completed games for all users
 
-const GUEST_STORAGE_KEY = 'goofy_guesser_guest_play';
+const PROGRESS_STORAGE_KEY = 'goofy_guesser_progress';
 
-interface GuestPlayStatus {
+export interface GameProgress {
   date: string;
-  played: boolean;
-  guessCount?: number;
-  solved?: boolean;
+  guesses: string[];
+  guessStates: LetterState[][];
+  turn: number;
+  isGameOver: boolean;
+  isGameWon: boolean;
+  usedKeys: { [key: string]: LetterState };
 }
 
-export const saveGuestPlayStatus = (status: Omit<GuestPlayStatus, 'date' | 'played'>): void => {
+export const saveGameProgress = (progress: Omit<GameProgress, 'date'>): void => {
   try {
-    const data: GuestPlayStatus = {
+    const data: GameProgress = {
       date: getLocalDateString(),
-      played: true,
-      ...status
+      ...progress
     };
-    localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
-    console.error('Failed to save guest play status:', e);
+    console.error('Failed to save game progress:', e);
+  }
+};
+
+export const loadGameProgress = (): GameProgress | null => {
+  try {
+    const stored = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (!stored) return null;
+    
+    const data: GameProgress = JSON.parse(stored);
+    
+    // Only return if it's from today
+    if (data.date !== getLocalDateString()) {
+      clearGameProgress();
+      return null;
+    }
+    
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+export const clearGameProgress = (): void => {
+  try {
+    localStorage.removeItem(PROGRESS_STORAGE_KEY);
+  } catch (e) {
+    console.error('Failed to clear game progress:', e);
+  }
+};
+
+// Check if there's a completed game for today
+export const hasCompletedGameToday = (): boolean => {
+  const progress = loadGameProgress();
+  return progress !== null && progress.isGameOver === true;
+};
+
+// Legacy guest helpers (now use the unified progress system)
+export const saveGuestPlayStatus = (status: { guessCount?: number; solved?: boolean }): void => {
+  // Guest play status is now stored as part of game progress
+  // This function is called at game end, progress should already be saved
+  // Just ensure the game is marked as over
+  const existing = loadGameProgress();
+  if (existing) {
+    saveGameProgress({
+      ...existing,
+      isGameOver: true,
+      isGameWon: status.solved ?? false
+    });
   }
 };
 
 export const hasGuestPlayedToday = (): boolean => {
-  try {
-    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
-    if (!stored) return false;
-    
-    const data: GuestPlayStatus = JSON.parse(stored);
-    return data.date === getLocalDateString() && data.played === true;
-  } catch {
-    return false;
-  }
+  return hasCompletedGameToday();
 };
+

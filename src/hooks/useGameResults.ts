@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { GroupWithMembership } from './useGroups';
+import type { LetterState } from '../lib/gameLogic';
 
 interface SubmitResultParams {
   guessCount: number;
@@ -193,13 +194,90 @@ export function useGameResults() {
     return !!data;
   }, [user]);
 
+  // ============================================
+  // DATABASE GAME PROGRESS (for authenticated users)
+  // ============================================
+
+  interface DBGameProgress {
+    guesses: string[];
+    guessStates: LetterState[][];
+    turn: number;
+    isGameOver: boolean;
+    isGameWon: boolean;
+    usedKeys: { [key: string]: LetterState };
+  }
+
+  // Save game progress to database
+  const saveGameProgressDB = useCallback(async (progress: DBGameProgress): Promise<boolean> => {
+    if (!supabase || !user) return false;
+
+    const localDate = getLocalDate();
+
+    // Upsert: insert or update if exists
+    const { error } = await supabase
+      .from('user_game_progress')
+      .upsert({
+        user_id: user.id,
+        local_date: localDate,
+        guesses: progress.guesses,
+        guess_states: progress.guessStates,
+        turn: progress.turn,
+        is_game_over: progress.isGameOver,
+        is_game_won: progress.isGameWon,
+        used_keys: progress.usedKeys,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,local_date'
+      });
+
+    if (error) {
+      console.error('Failed to save game progress:', error);
+      return false;
+    }
+    return true;
+  }, [user]);
+
+  // Load game progress from database
+  const loadGameProgressDB = useCallback(async (): Promise<DBGameProgress | null> => {
+    if (!supabase || !user) return null;
+
+    const localDate = getLocalDate();
+
+    // First, cleanup old records (runs the DB function)
+    await supabase.rpc('cleanup_old_game_progress');
+
+    // Then fetch today's progress
+    const { data, error } = await supabase
+      .from('user_game_progress')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('local_date', localDate)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      guesses: data.guesses,
+      guessStates: data.guess_states,
+      turn: data.turn,
+      isGameOver: data.is_game_over,
+      isGameWon: data.is_game_won,
+      usedKeys: data.used_keys
+    };
+  }, [user]);
+
   return {
     submitResult,
     submitPersonalResult,
     hasSubmittedToday,
     hasPlayedTodayPersonal,
+    saveGameProgressDB,
+    loadGameProgressDB,
     calculateDayIndex,
     getLocalDate,
     getTimezoneOffset
   };
 }
+

@@ -14,8 +14,9 @@ import {
   checkGuess, 
   getWordOfDay, 
   saveGuestPlayStatus,
-  hasGuestPlayedToday,
-  type LetterState 
+  saveGameProgress,
+  loadGameProgress,
+  type LetterState
 } from './lib/gameLogic';
 
 type AppView = 'entry' | 'groups' | 'game';
@@ -23,7 +24,13 @@ type AppView = 'entry' | 'groups' | 'game';
 function GameContent() {
   const { user, loading: authLoading } = useAuth();
   const { groups, loading: groupsLoading } = useGroups();
-  const { submitResult, hasSubmittedToday, hasPlayedTodayPersonal } = useGameResults();
+  const { 
+    submitResult, 
+    hasSubmittedToday, 
+    hasPlayedTodayPersonal,
+    saveGameProgressDB,
+    loadGameProgressDB
+  } = useGameResults();
 
   const [view, setView] = useState<AppView>('entry');
   const [isGuest, setIsGuest] = useState(false);
@@ -138,6 +145,59 @@ function GameContent() {
     setSolution(getWordOfDay());
   }, []);
 
+  // Initialize game from progress (works for both guest and auth)
+  const initializeFromProgress = useCallback((progress: {
+    guesses: string[];
+    guessStates: LetterState[][];
+    turn: number;
+    usedKeys: { [key: string]: LetterState };
+    isGameOver: boolean;
+    isGameWon: boolean;
+  }) => {
+    setGuesses(progress.guesses);
+    setGuessStates(progress.guessStates);
+    setTurn(progress.turn);
+    setUsedKeys(progress.usedKeys);
+    setIsGameOver(progress.isGameOver);
+    setIsGameWon(progress.isGameWon);
+    if (progress.isGameOver) {
+      finalGuessCountRef.current = progress.turn;
+      setResultSubmitted(true);
+    }
+  }, []);
+
+  // Helper to save progress (uses DB for auth users, LocalStorage for guests)
+  const saveProgress = useCallback(async (progressData: {
+    guesses: string[];
+    guessStates: LetterState[][];
+    turn: number;
+    isGameOver: boolean;
+    isGameWon: boolean;
+    usedKeys: { [key: string]: LetterState };
+  }) => {
+    if (user && !isGuest) {
+      // Authenticated user - save to database
+      await saveGameProgressDB(progressData);
+    } else {
+      // Guest - save to LocalStorage
+      saveGameProgress(progressData);
+    }
+  }, [user, isGuest, saveGameProgressDB]);
+
+  // Load progress from DB when authenticated user enters game view
+  useEffect(() => {
+    if (view !== 'game' || isGuest || !user) return;
+    
+    const loadUserProgress = async () => {
+      const progress = await loadGameProgressDB();
+      if (progress) {
+        initializeFromProgress(progress);
+      }
+    };
+    
+    loadUserProgress();
+  }, [view, isGuest, user, loadGameProgressDB, initializeFromProgress]);
+
   useEffect(() => {
     if (view !== 'game') return;
 
@@ -204,19 +264,111 @@ function GameContent() {
       finalGuessCountRef.current = guessCount;
       setTurn(guessCount);
       setCurrentGuess('');
+      
+      // Compute final state for saving
+      const finalGuesses = [...guesses];
+      finalGuesses[turn] = currentGuess;
+      const finalGuessStates = [...guessStates];
+      finalGuessStates[turn] = result;
+      
+      // Update used keys synchronously for save
+      const finalUsedKeys = { ...usedKeys };
+      currentGuess.split('').forEach((char, i) => {
+        const currentState = finalUsedKeys[char];
+        const newState = result[i];
+        if (newState === 'correct') {
+          finalUsedKeys[char] = 'correct';
+        } else if (newState === 'present' && currentState !== 'correct') {
+          finalUsedKeys[char] = 'present';
+        } else if (newState === 'absent' && currentState !== 'correct' && currentState !== 'present') {
+          finalUsedKeys[char] = 'absent';
+        }
+      });
+      
+      // Save progress immediately (before timeout)
+      saveProgress({
+        guesses: finalGuesses,
+        guessStates: finalGuessStates,
+        turn: guessCount,
+        isGameOver: true,
+        isGameWon: true,
+        usedKeys: finalUsedKeys
+      });
+      
       setTimeout(() => {
         setIsGameWon(true);
         setIsGameOver(true);
       }, 2500);
     } else if (turn === 5) {
-      finalGuessCountRef.current = 6; // Failed after 6 guesses
-      setTurn(6);  // Increment turn so the last row renders with states (animation)
+      finalGuessCountRef.current = 6;
+      setTurn(6);
       setCurrentGuess('');
+      
+      // Compute final state for saving
+      const finalGuesses = [...guesses];
+      finalGuesses[turn] = currentGuess;
+      const finalGuessStates = [...guessStates];
+      finalGuessStates[turn] = result;
+      
+      // Update used keys synchronously for save
+      const finalUsedKeys = { ...usedKeys };
+      currentGuess.split('').forEach((char, i) => {
+        const currentState = finalUsedKeys[char];
+        const newState = result[i];
+        if (newState === 'correct') {
+          finalUsedKeys[char] = 'correct';
+        } else if (newState === 'present' && currentState !== 'correct') {
+          finalUsedKeys[char] = 'present';
+        } else if (newState === 'absent' && currentState !== 'correct' && currentState !== 'present') {
+          finalUsedKeys[char] = 'absent';
+        }
+      });
+      
+      // Save progress immediately
+      saveProgress({
+        guesses: finalGuesses,
+        guessStates: finalGuessStates,
+        turn: 6,
+        isGameOver: true,
+        isGameWon: false,
+        usedKeys: finalUsedKeys
+      });
+      
       setTimeout(() => {
         setIsGameOver(true);
       }, 2000);
     } else {
-      setTurn((prev) => prev + 1);
+      // Save in-progress game
+      const updatedGuesses = [...guesses];
+      updatedGuesses[turn] = currentGuess;
+      const updatedGuessStates = [...guessStates];
+      updatedGuessStates[turn] = result;
+      const newTurn = turn + 1;
+      
+      // Update used keys synchronously for save
+      const updatedUsedKeys = { ...usedKeys };
+      currentGuess.split('').forEach((char, i) => {
+        const currentState = updatedUsedKeys[char];
+        const newState = result[i];
+        if (newState === 'correct') {
+          updatedUsedKeys[char] = 'correct';
+        } else if (newState === 'present' && currentState !== 'correct') {
+          updatedUsedKeys[char] = 'present';
+        } else if (newState === 'absent' && currentState !== 'correct' && currentState !== 'present') {
+          updatedUsedKeys[char] = 'absent';
+        }
+      });
+      
+      saveProgress({
+        guesses: updatedGuesses,
+        guessStates: updatedGuessStates,
+        turn: newTurn,
+        isGameOver: false,
+        isGameWon: false,
+        usedKeys: updatedUsedKeys
+      });
+      
+      setTurn(newTurn);
       setCurrentGuess('');
     }
   };
@@ -261,11 +413,18 @@ function GameContent() {
   }, [isGameOver, handleGameEnd]);
 
   const handlePlayAsGuest = () => {
-    // Check if guest already played today
-    if (hasGuestPlayedToday()) {
-      alert('You\'ve already played today! Come back tomorrow for a new word.');
+    // Check for existing progress (completed or in-progress)
+    const savedProgress = loadGameProgress();
+    
+    if (savedProgress) {
+      // Restore the saved game state
+      initializeFromProgress(savedProgress);
+      setIsGuest(true);
+      setView('game');
       return;
     }
+    
+    // No saved progress - start fresh game
     setIsGuest(true);
     setView('game');
   };

@@ -109,6 +109,14 @@ export function Leaderboard({ group, onClose }: LeaderboardProps) {
   const handleResetScores = async () => {
     if (!supabase || !user) return;
 
+    // Get all member user_ids for this group
+    const { data: members } = await supabase
+      .from('group_members')
+      .select('user_id')
+      .eq('group_id', group.id);
+
+    const memberIds = members?.map(m => m.user_id) || [];
+
     // Delete all daily results for this group
     await supabase
       .from('daily_results')
@@ -120,6 +128,14 @@ export function Leaderboard({ group, onClose }: LeaderboardProps) {
       .from('score_adjustments')
       .delete()
       .eq('group_id', group.id);
+
+    // Delete game progress for all members in this group (allows them to play again)
+    if (memberIds.length > 0) {
+      await supabase
+        .from('user_game_progress')
+        .delete()
+        .in('user_id', memberIds);
+    }
 
     setShowConfirmReset(false);
     fetchLeaderboard();
