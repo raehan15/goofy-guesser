@@ -6,14 +6,24 @@ export const isValidGuess = (guess: string): boolean => {
   return VALID_GUESSES.includes(guess);
 };
 
-// Simple hash function for consistent word selection based on date string
+// Improved hash function that produces well-scattered values for consecutive dates
 const hashDateString = (dateStr: string): number => {
   let hash = 0;
+  
+  // First pass: standard string hash
   for (let i = 0; i < dateStr.length; i++) {
     const char = dateStr.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash & hash;
   }
+  
+  // Multiple mixing rounds for better distribution
+  // Using prime multipliers to scatter consecutive values
+  hash = Math.abs(hash);
+  hash = ((hash * 2654435761) >>> 0) % 2147483647; // Knuth's multiplicative hash
+  hash = ((hash * 1597334677) >>> 0) % 2147483647; // Another prime multiplier
+  hash = hash ^ (hash >>> 16); // XOR shift for extra mixing
+  
   return Math.abs(hash);
 };
 
