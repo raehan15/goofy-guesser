@@ -23,15 +23,32 @@ export function Modal({
 }: ModalProps) {
   if (!isOpen) return null;
 
+  // Get formatted local date (e.g., "30th Dec")
+  const getFormattedDate = () => {
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.toLocaleString('default', { month: 'short' });
+    
+    // Add ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
+    const suffix = 
+      day === 1 || day === 21 || day === 31 ? 'st' :
+      day === 2 || day === 22 ? 'nd' :
+      day === 3 || day === 23 ? 'rd' : 'th';
+    
+    return `${day}${suffix} ${month}`;
+  };
+
   const copyScore = () => {
     const score = isWin ? `${turn}/6` : 'X/6';
-    navigator.clipboard.writeText(`Goofy Guesser ${score}`);
+    const dateStr = getFormattedDate();
+    navigator.clipboard.writeText(`Goofy Guesser ${score} - ${dateStr}`);
     alert('Score copied to clipboard!');
   };
 
   const copyGrid = () => {
     const score = isWin ? `${turn}/6` : 'X/6';
-    let grid = `Goofy Guesser ${score}\n\n`;
+    const dateStr = getFormattedDate();
+    let grid = `Goofy Guesser ${score} - ${dateStr}\n\n`;
     
     const limit = isWin ? turn : turn + 1;
     for (let i = 0; i < limit; i++) {
