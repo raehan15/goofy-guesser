@@ -6,6 +6,7 @@ import './GroupsPanel.css';
 
 interface GroupsPanelProps {
   onPlayGame: () => void;
+  onViewResult?: () => void;
   // null = still checking, true = played, false = not played
   hasPlayedToday?: boolean | null;
   pendingJoinCode?: string | null;
@@ -13,7 +14,8 @@ interface GroupsPanelProps {
 }
 
 export function GroupsPanel({ 
-  onPlayGame, 
+  onPlayGame,
+  onViewResult,
   hasPlayedToday = null,
   pendingJoinCode,
   onJoinComplete
@@ -90,9 +92,13 @@ export function GroupsPanel({
             Checking...
           </div>
         ) : hasPlayedToday === true ? (
-          <div className="played-today-badge">
+          <button 
+            className="played-today-badge played-today-clickable" 
+            onClick={onViewResult}
+            title="Click to view your result"
+          >
             ✓ Played Today
-          </div>
+          </button>
         ) : (
           <button className="gp-btn gp-btn-play" onClick={onPlayGame}>
             ▶ Play Today's Game

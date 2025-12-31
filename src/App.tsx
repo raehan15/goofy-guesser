@@ -429,6 +429,18 @@ function GameContent() {
     setView('game');
   };
 
+  // Handler for viewing already-played game result
+  const handleViewResult = async () => {
+    // Load saved progress from database
+    const savedProgress = await loadGameProgressDB();
+    
+    if (savedProgress) {
+      // Restore the game state
+      initializeFromProgress(savedProgress);
+      setView('game');
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="App" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100dvh' }}>
@@ -453,7 +465,8 @@ function GameContent() {
       <div style={{ minHeight: '100dvh', background: 'linear-gradient(165deg, #0a0f0f 0%, #0d1717 30%, #0f1a1a 60%, #0a1212 100%)' }}>
         <Navbar />
         <GroupsPanel 
-          onPlayGame={() => setView('game')} 
+          onPlayGame={() => setView('game')}
+          onViewResult={handleViewResult}
           hasPlayedToday={playedTodayStatus}
           pendingJoinCode={pendingJoinCode}
           onJoinComplete={() => setPendingJoinCode(null)}
