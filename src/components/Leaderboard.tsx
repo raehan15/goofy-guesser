@@ -109,33 +109,21 @@ export function Leaderboard({ group, onClose }: LeaderboardProps) {
   const handleResetScores = async () => {
     if (!supabase || !user) return;
 
-    // Get all member user_ids for this group
-    const { data: members } = await supabase
-      .from('group_members')
-      .select('user_id')
-      .eq('group_id', group.id);
-
-    const memberIds = members?.map(m => m.user_id) || [];
-
-    // Delete all daily results for this group
+    // Delete all daily results for this group only
     await supabase
       .from('daily_results')
       .delete()
       .eq('group_id', group.id);
 
-    // Delete all score adjustments for this group
+    // Delete all score adjustments for this group only
     await supabase
       .from('score_adjustments')
       .delete()
       .eq('group_id', group.id);
 
-    // Delete game progress for all members in this group (allows them to play again)
-    if (memberIds.length > 0) {
-      await supabase
-        .from('user_game_progress')
-        .delete()
-        .in('user_id', memberIds);
-    }
+    // Note: We intentionally do NOT delete user_game_progress here
+    // because users may be in multiple groups. Deleting their progress
+    // would allow them to play again and submit duplicates to other groups.
 
     setShowConfirmReset(false);
     fetchLeaderboard();
