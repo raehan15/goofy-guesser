@@ -67,13 +67,13 @@ export function useGameResults() {
     for (const group of groups) {
       const dayIndex = calculateDayIndex(group.joined_at);
 
-      // Check if already submitted for this day
+      // Check if already submitted for this LOCAL DATE (consistent with display/scoring)
       const { data: existing } = await supabase
         .from('daily_results')
         .select('id')
         .eq('user_id', user.id)
         .eq('group_id', group.id)
-        .eq('day_index', dayIndex)
+        .eq('local_date', localDate)
         .maybeSingle();
 
       if (existing) {
