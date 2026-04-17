@@ -107,13 +107,15 @@ export function useGameResults() {
 
         const { error } = await supabase
           .from("daily_results")
-          .upsert(insertData, {
-            onConflict: "user_id,group_id,local_date",
-          });
+          .insert(insertData);
 
         if (error) {
-          console.error("Supabase INSERT error:", error);
-          errors.push(`Failed for ${group.name}: ${error.message}`);
+          // Duplicate means this day's result is already present for this group.
+          // Treat as success so retries don't keep surfacing submission errors.
+          if (error.code !== "23505") {
+            console.error("Supabase INSERT error:", error);
+            errors.push(`Failed for ${group.name}: ${error.message}`);
+          }
         } else {
           submitted++;
         }
