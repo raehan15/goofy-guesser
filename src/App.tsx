@@ -174,7 +174,6 @@ function GameContent() {
       setIsGameWon(progress.isGameWon);
       if (progress.isGameOver) {
         finalGuessCountRef.current = progress.turn;
-        setResultSubmitted(true);
       }
     },
     [],
