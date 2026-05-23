@@ -8,6 +8,7 @@ interface ModalProps {
   onBackToGroups?: () => void;
   groupCount?: number;
   isAuthenticated?: boolean;
+  onBackToGrid?: () => void;
 }
 
 export function Modal({ 
@@ -19,7 +20,8 @@ export function Modal({
   onClose, 
   onBackToGroups,
   groupCount = 0,
-  isAuthenticated = false
+  isAuthenticated = false,
+  onBackToGrid
 }: ModalProps) {
   if (!isOpen) return null;
 
@@ -111,15 +113,30 @@ export function Modal({
           </button>
         </div>
 
-        {isAuthenticated ? (
-          <button className="btn-primary" onClick={onBackToGroups}>
-            ← Back to Groups
-          </button>
-        ) : (
-          <button className="btn-primary" onClick={onClose}>
-            ← Back to Home
-          </button>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {onBackToGrid && (
+            <button 
+              className="btn-primary" 
+              onClick={onBackToGrid}
+              style={{
+                background: 'linear-gradient(135deg, #00b8a3, #00d1b8)',
+                color: '#ffffff',
+                boxShadow: '0 4px 15px rgba(0, 184, 163, 0.3)'
+              }}
+            >
+              Back to Grid
+            </button>
+          )}
+          {isAuthenticated ? (
+            <button className="btn-primary" onClick={onBackToGroups}>
+              ← Back to Groups
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={onClose}>
+              ← Back to Home
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

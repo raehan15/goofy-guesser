@@ -39,6 +39,7 @@ function GameContent() {
   const [isCheckingPlayStatus, setIsCheckingPlayStatus] = useState(true);
   // true = played, false = not played (only valid when isCheckingPlayStatus is false)
   const [hasPlayedToday, setHasPlayedToday] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   // Store join code from URL to persist across auth flow
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(() => {
@@ -208,6 +209,9 @@ function GameContent() {
       const progress = await loadGameProgressDB();
       if (progress) {
         initializeFromProgress(progress);
+        if (progress.isGameOver) {
+          setShowStatsModal(false);
+        }
       }
     };
 
@@ -322,6 +326,7 @@ function GameContent() {
       setTimeout(() => {
         setIsGameWon(true);
         setIsGameOver(true);
+        setShowStatsModal(true);
       }, 2500);
     } else if (turn === 5) {
       finalGuessCountRef.current = 6;
@@ -364,6 +369,7 @@ function GameContent() {
 
       setTimeout(() => {
         setIsGameOver(true);
+        setShowStatsModal(true);
       }, 2000);
     } else {
       // Save in-progress game
@@ -461,12 +467,16 @@ function GameContent() {
       initializeFromProgress(savedProgress);
       setIsGuest(true);
       setView("game");
+      if (savedProgress.isGameOver) {
+        setShowStatsModal(false);
+      }
       return;
     }
 
     // No saved progress - start fresh game
     setIsGuest(true);
     setView("game");
+    setShowStatsModal(false);
   };
 
   // Handler for viewing already-played game result
@@ -478,6 +488,7 @@ function GameContent() {
       // Restore the game state
       initializeFromProgress(savedProgress);
       setView("game");
+      setShowStatsModal(false);
     }
   };
 
@@ -567,6 +578,8 @@ function GameContent() {
             guessStates={guessStates}
             turn={turn}
             shakeRowIndex={shakeRowIndex}
+            isGameOver={isGameOver}
+            onShowStats={() => setShowStatsModal(true)}
           />
           <Keyboard
             onChar={handleChar}
@@ -575,7 +588,7 @@ function GameContent() {
             usedKeys={usedKeys}
           />
           <Modal
-            isOpen={isGameOver}
+            isOpen={showStatsModal}
             isWin={isGameWon}
             solution={solution}
             turn={turn}
@@ -587,6 +600,7 @@ function GameContent() {
             onBackToGroups={() => setView("groups")}
             groupCount={!isGuest && user ? groups.length : 0}
             isAuthenticated={!isGuest && !!user}
+            onBackToGrid={() => setShowStatsModal(false)}
           />
         </main>
       </div>
