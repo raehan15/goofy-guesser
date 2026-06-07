@@ -13,6 +13,7 @@ import {
   isValidGuess,
   checkGuess,
   getWordOfDay,
+  getLocalDateString,
   saveGuestPlayStatus,
   saveGameProgress,
   loadGameProgress,
@@ -67,6 +68,9 @@ function GameContent() {
 
   // Ref to capture the final guess count (avoids stale closure issues)
   const finalGuessCountRef = useRef<number>(0);
+  // Track the date when the app was loaded to detect midnight rollover
+  const loadedDateRef = useRef(getLocalDateString());
+
   // Check if user has already played today on load
   useEffect(() => {
     let cancelled = false;
@@ -155,6 +159,42 @@ function GameContent() {
 
   useEffect(() => {
     setSolution(getWordOfDay());
+  }, []);
+
+  // Detect midnight rollover — if the local date changes while the app
+  // is still running (e.g. PWA left open overnight, device woke from
+  // sleep, or user returned to a stale tab), force a full page reload
+  // so the new word is computed fresh and all state resets cleanly.
+  useEffect(() => {
+    const checkForNewDay = () => {
+      const today = getLocalDateString();
+      if (today !== loadedDateRef.current) {
+        window.location.reload();
+      }
+    };
+
+    // Re-check when the tab/app becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkForNewDay();
+      }
+    };
+
+    // Re-check when the window regains focus
+    const onFocus = () => checkForNewDay();
+
+    // Periodic fallback every 30 seconds (catches edge cases like
+    // the user staring at the screen as midnight ticks over)
+    const intervalId = setInterval(checkForNewDay, 30_000);
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   // Initialize game from progress (works for both guest and auth)
