@@ -23,7 +23,7 @@ import {
 type AppView = "entry" | "groups" | "game";
 
 function GameContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isRecoveringPassword } = useAuth();
   const { groups, loading: groupsLoading } = useGroups();
   const {
     submitResult,
@@ -146,7 +146,9 @@ function GameContent() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (user && !isGuest) {
+    if (isRecoveringPassword) {
+      setView("entry");
+    } else if (user && !isGuest) {
       // Logged in user - show groups by default
       if (view === "entry") {
         setView("groups");
@@ -155,7 +157,7 @@ function GameContent() {
       // Not logged in and not guest - show entry
       setView("entry");
     }
-  }, [user, authLoading, isGuest, view]);
+  }, [user, authLoading, isGuest, view, isRecoveringPassword]);
 
   useEffect(() => {
     setSolution(getWordOfDay());

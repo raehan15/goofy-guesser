@@ -156,11 +156,26 @@
 }
 
 .auth-input-group label {
-  display: block;
+  display: flex;
+  align-items: center;
   color: #a3a3a3;
   font-size: 0.85rem;
   margin-bottom: 8px;
   font-weight: 500;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #737373;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+  color: #ffffff;
 }
 
 .auth-input {
@@ -180,6 +195,37 @@
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper .auth-input {
+  padding-right: 44px; /* Make room for the eye icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  color: #737373;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.password-toggle-btn:hover {
+  color: #00b8a3; /* Cool teal color to match the theme */
+  background: rgba(0, 184, 163, 0.1);
 }
 
 .auth-input::placeholder {
